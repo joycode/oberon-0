@@ -106,9 +106,15 @@ bool Parser::selector(ASTNode **result)
 
 			ASTNode *exp = NULL;
 			if (!this->expression(&exp)) {
+				if (exp != NULL) {
+					delete exp;
+				}
 				return false;
 			}
-			assert(exp != NULL);
+			if (exp == NULL) {
+				assert(false);
+				return false;
+			}
 
 			sym_kind = this->getCurrentSymbol();
 			if (sym_kind != SymbolKind::RBRAK) {
@@ -157,6 +163,9 @@ bool Parser::factor(ASTNode **result)
 		else if ((sym_kind == SymbolKind::PERIOD) || (sym_kind == SymbolKind::LBRAK)) {
 			ASTNode *ast_selector = NULL;
 			if (!this->selector(&ast_selector)) {
+				if (ast_selector != NULL) {
+					delete ast_selector;
+				}
 				return false;
 			}
 
@@ -191,9 +200,15 @@ bool Parser::factor(ASTNode **result)
 
 		ASTNode *ast_exp = NULL;
 		if (!this->expression(&ast_exp)) {
+			if (ast_exp != NULL) {
+				delete ast_exp;
+			}
 			return false;
 		}
-		assert(ast_exp != NULL);
+		if (ast_exp == NULL) {
+			assert(false);
+			return false;
+		}
 
 		sym_kind = this->getCurrentSymbol();
 		if (sym_kind != SymbolKind::RPAREN) {
@@ -239,12 +254,18 @@ bool Parser::term(ASTNode **result)
 	}
 
 	*result = new ASTNode(ASTNodeKind::TERM);
-	
+
 	ASTNode *ast_factor = NULL;
 	if (!this->factor(&ast_factor)) {
+		if (ast_factor != NULL) {
+			delete ast_factor;
+		}
 		return false;
 	}
-	assert(ast_factor != NULL);
+	if (ast_factor == NULL) {
+		assert(false);
+		return false;
+	}
 
 	(*result)->addChild(ast_factor);
 
@@ -262,9 +283,15 @@ bool Parser::term(ASTNode **result)
 			}
 
 			if (!this->factor(&ast_factor)) {
+				if (ast_factor != NULL) {
+					delete ast_factor;
+				}
 				return false;
 			}
-			assert(ast_factor != NULL);
+			if (ast_factor == NULL) {
+				assert(false);
+				return false;
+			}
 
 			(*result)->addChild(new ASTNode(new SymbolObject(sym_kind)));
 			(*result)->addChild(ast_factor);
@@ -295,10 +322,15 @@ bool Parser::simpleExpression(ASTNode **result)
 
 	ASTNode *ast_term = NULL;
 	if (!this->term(&ast_term)) {
+		if (ast_term != NULL) {
+			delete ast_term;
+		}
 		return false;
 	}
-
-	assert(ast_term != NULL);
+	if (ast_term == NULL) {
+		assert(false);
+		return false;
+	}  
 	(*result)->addChild(ast_term);
 
 	sym_kind = this->getCurrentSymbol();
@@ -307,10 +339,15 @@ bool Parser::simpleExpression(ASTNode **result)
 
 		sym_kind = this->getNextSymbol();
 		if (!this->term(&ast_term)) {
+			if (ast_term != NULL) {
+				delete ast_term;
+			}
 			return false;
 		}
-
-		assert(ast_term != NULL);
+		if (ast_term == NULL) {
+			assert(false);
+			return false;
+		}
 		(*result)->addChild(ast_term);
 
 		sym_kind = this->getCurrentSymbol();
@@ -330,10 +367,15 @@ bool Parser::expression(ASTNode **result)
 
 	ASTNode *ast_simple_exp = NULL;
 	if (!this->simpleExpression(&ast_simple_exp)) {
+		if (ast_simple_exp != NULL) {
+			delete ast_simple_exp;
+		}
 		return false;
 	}
-	assert(ast_simple_exp != NULL);
-
+	if (ast_simple_exp == NULL) {
+		assert(false);
+		return false;
+	}
 	(*result)->addChild(ast_simple_exp);
 
 	sym_kind = this->getCurrentSymbol();
@@ -352,10 +394,15 @@ bool Parser::expression(ASTNode **result)
 			}
 
 			if (!this->simpleExpression(&ast_simple_exp)) {
+				if (ast_simple_exp != NULL) {
+					delete ast_simple_exp;
+				}
 				return false;
 			}
-			assert(ast_simple_exp != NULL);
-
+			if (ast_simple_exp == NULL) {
+				assert(false);
+				return false;
+			}
 			(*result)->addChild(ast_simple_exp);
 
 			return true;
@@ -382,6 +429,9 @@ bool Parser::assignment(ASTNode **result)
 
 	ASTNode *ast_selector = NULL;
 	if (!this->selector(&ast_selector)) {
+		if (ast_selector != NULL) {
+			delete ast_selector;
+		}
 		return false;
 	}
 
@@ -403,10 +453,15 @@ bool Parser::assignment(ASTNode **result)
 
 	ASTNode *ast_exp = NULL;
 	if (!this->expression(&ast_exp)) {
+		if (ast_exp != NULL) {
+			delete ast_exp;
+		}
 		return false;
 	}
-	assert(ast_exp != NULL);
-
+	if (ast_exp == NULL) {
+		assert(false);
+		return false;
+	}
 	(*result)->addChild(ast_exp);
 
 	return true;
@@ -433,10 +488,15 @@ bool Parser::actualParameters(ASTNode **result)
 	if (sym_kind != SymbolKind::RPAREN) {
 		ASTNode *ast_exp = NULL;
 		if (!this->expression(&ast_exp)) {
+			if (ast_exp != NULL) {
+				delete ast_exp;
+			}
 			return false;
 		}
-		assert(ast_exp != NULL);
-		
+		if (ast_exp == NULL) {
+			assert(false);
+			return false;
+		}
 		(*result)->addChild(ast_exp);
 
 		while (sym_kind == SymbolKind::COMMA) {
@@ -447,10 +507,15 @@ bool Parser::actualParameters(ASTNode **result)
 			}
 
 			if (!this->expression(&ast_exp)) {
+				if (ast_exp != NULL) {
+					delete ast_exp;
+				}
 				return false;
 			}
-			assert(ast_exp != NULL);
-
+			if (ast_exp == NULL) {
+				assert(false);
+				return false;
+			}
 			(*result)->addChild(ast_exp);
 		}
 	}
@@ -483,6 +548,9 @@ bool Parser::procedureCall(ASTNode **result)
 	if ((sym_kind == SymbolKind::PERIOD) || (sym_kind == SymbolKind::LBRAK)) {
 		ASTNode *ast_selector = NULL;
 		if (!this->selector(&ast_selector)) {
+			if (ast_selector != NULL) {
+				delete ast_selector;
+			}
 			return false;
 		}
 		
@@ -497,6 +565,9 @@ bool Parser::procedureCall(ASTNode **result)
 	else if (sym_kind == SymbolKind::LPREN) {
 		ASTNode *ast_params = NULL;
 		if (!this->actualParameters(&ast_params)) {
+			if (ast_params != NULL) {
+				delete ast_params;
+			}
 			return false;
 		}
 		if (ast_params == NULL) {
@@ -527,6 +598,9 @@ bool Parser::ifStatement(ASTNode **result)
 
 	ASTNode *ast_exp = NULL;
 	if (!this->expression(&ast_exp)) {
+		if (ast_exp != NULL) {
+			delete ast_exp;
+		}
 		return false;
 	}
 	if (ast_exp == NULL) {
@@ -547,6 +621,9 @@ bool Parser::ifStatement(ASTNode **result)
 
 	sym_kind = this->getNextSymbol();
 	if (!this->statementSequence(&ast_stmt_seq)) {
+		if (ast_stmt_seq != NULL) {
+			delete ast_stmt_seq;
+		}
 		return false;
 	}
 
@@ -560,6 +637,9 @@ bool Parser::ifStatement(ASTNode **result)
 
 		sym_kind = this->getNextSymbol();
 		if (!this->expression(&ast_exp)) {
+			if (ast_exp != NULL) {
+				delete ast_exp;
+			}
 			return false;
 		}
 		if (ast_exp == NULL) {
@@ -576,6 +656,9 @@ bool Parser::ifStatement(ASTNode **result)
 
 		this->getNextSymbol();
 		if (!this->statementSequence(&ast_stmt_seq)) {
+			if (ast_stmt_seq != NULL) {
+				delete ast_stmt_seq;
+			}
 			return false;
 		}
 
@@ -591,6 +674,9 @@ bool Parser::ifStatement(ASTNode **result)
 
 		this->getNextSymbol();
 		if (!this->statementSequence(&ast_stmt_seq)) {
+			if (ast_stmt_seq != NULL) {
+				delete ast_stmt_seq;
+			}
 			return false;
 		}
 
@@ -627,6 +713,9 @@ bool Parser::whileStatement(ASTNode **result)
 
 	ASTNode *ast_exp = NULL;
 	if (!this->expression(&ast_exp)) {
+		if (ast_exp != NULL) {
+			delete ast_exp;
+		}
 		return false;
 	}
 	if (ast_exp == NULL) {

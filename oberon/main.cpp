@@ -23,6 +23,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "parse failed\n");
 	}
 	else {
+		delete result;
 		fprintf(stderr, "parse successful\n");
 	}
 
