@@ -7,8 +7,6 @@
 #include "SymbolObject.h"
 #include "ASTIdentType.h"
 
-using namespace std;
-
 class ASTIdentInfo
 {
 public:
@@ -65,7 +63,7 @@ private:
 	ASTIdentType *m_identType;
 	ASTNode *m_astNode;
 
-	list<const ASTIdentInfo* const> m_fields;
+	std::list<const ASTIdentInfo* const> m_fields;
 };
 
 #endif

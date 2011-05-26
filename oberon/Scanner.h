@@ -6,14 +6,12 @@
 #include "SymbolKind.h"
 #include "SourceLocation.h"
 
-using namespace std;
-
 class Scanner {
 public:
 	Scanner(FILE *fp);
 	virtual ~Scanner();
 
-	void mark(string errMsg);
+	void mark(std::string errMsg);
 	bool init();
 	SymbolKind::T_SymbolKind get();
 
@@ -22,7 +20,7 @@ public:
 		return m_currentSymbolKind;
 	}
 
-	string getIdentValue() const
+	std::string getIdentValue() const
 	{
 		return m_ident;
 	}
@@ -48,9 +46,9 @@ private:
 	FILE *m_fp;
 	SymbolKind::T_SymbolKind m_currentSymbolKind;
 	char m_peekChar;
-	SourceLocation m_sourceLocation;
 	int m_number;
-	string m_ident;
+	std::string m_ident;
+	SourceLocation m_sourceLocation;
 };
 
 #endif

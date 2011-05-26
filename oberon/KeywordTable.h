@@ -6,18 +6,16 @@
 #include "SymbolKind.h"
 #include "Util.h"
 
-using namespace std;
-
 struct KeywordInfo;
 typedef const KeywordInfo * CP_KeywordInfo;
 
 class KeywordTable {
 private:
 	struct KeywordInfo {
-		string m_keyword;
+		std::string m_keyword;
 		SymbolKind::T_SymbolKind m_symbolKind;
 
-		KeywordInfo(string keyword, SymbolKind::T_SymbolKind symbolKind)
+		KeywordInfo(std::string keyword, SymbolKind::T_SymbolKind symbolKind)
 		{
 			m_keyword = keyword;
 			m_symbolKind = symbolKind;
@@ -30,7 +28,7 @@ private:
 public:
 	// test if @word is a keyword?
 	// if true, store corresponding Symbol Kind in @result
-	static bool isKeyword(string word, SymbolKind::T_SymbolKind *result)
+	static bool isKeyword(std::string word, SymbolKind::T_SymbolKind *result)
 	{
 		for (int i = 0;;i++) {
 			if (m_keywords[i] == NULL) {

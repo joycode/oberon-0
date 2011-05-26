@@ -7,12 +7,15 @@
 using namespace std;
 
 Scanner::Scanner(FILE *fp)
+	: m_sourceLocation()
 {
 	m_fp = fp;
 	m_currentSymbolKind == SymbolKind::ERROR;
 	m_peekChar = '\0';
 	m_number = 0;
 	m_ident = "";
+	m_sourceLocation.m_x = 1;
+	m_sourceLocation.m_y = 1;
 }
 
 Scanner::~Scanner()
@@ -23,7 +26,7 @@ void Scanner::mark(string errMsg)
 {
 	fprintf(stderr, "Line %d, Column %d: %s\n", 
 		m_sourceLocation.m_x, m_sourceLocation.m_y, 
-		errMsg);
+		errMsg.c_str());
 }
 
 SymbolKind::T_SymbolKind Scanner::get()
@@ -35,7 +38,7 @@ SymbolKind::T_SymbolKind Scanner::get()
 SymbolKind::T_SymbolKind Scanner::getInternal()
 {
 	for (;;) {
-		if (this->isWhiteSpace(m_peekChar)) {
+		while (this->isWhiteSpace(m_peekChar)) {
 			m_peekChar = this->peekChar();
 		}
 		
@@ -61,6 +64,7 @@ SymbolKind::T_SymbolKind Scanner::getInternal()
 		case '<':
 			m_peekChar = this->peekChar();
 			if (m_peekChar == '=') {
+				m_peekChar = this->peekChar();
 				return SymbolKind::LEQ;
 			}
 			else {
@@ -69,6 +73,7 @@ SymbolKind::T_SymbolKind Scanner::getInternal()
 		case '>':
 			m_peekChar = this->peekChar();
 			if (m_peekChar == '=') {
+				m_peekChar = this->peekChar();
 				return SymbolKind::GEQ;
 			}
 			else {
@@ -82,7 +87,13 @@ SymbolKind::T_SymbolKind Scanner::getInternal()
 			return SymbolKind::COMMA;
 		case ':':
 			m_peekChar = this->peekChar();
-			return SymbolKind::COLON;
+			if (m_peekChar == '=') {
+				m_peekChar = this->peekChar();
+				return SymbolKind::BECOMES;
+			}
+			else {
+				return SymbolKind::COLON;
+			}
 		case ')':
 			m_peekChar = this->peekChar();
 			return SymbolKind::RPAREN;
@@ -142,6 +153,7 @@ char Scanner::peekChar()
 
 	if (ch == '\n') {
 		m_sourceLocation.m_x++;
+		m_sourceLocation.m_y = 1;
 	}
 	else if (ch == '\r') {
 		// nothing to do in case of "\n\r"
@@ -196,6 +208,9 @@ SymbolKind::T_SymbolKind Scanner::getIdent()
 		if (isalpha(m_peekChar) || isdigit(m_peekChar)) {
 			ident += m_peekChar;
 		}
+		else {
+			break;
+		}
 	}
 
 	SymbolKind::T_SymbolKind sym = SymbolKind::ERROR;
@@ -217,6 +232,9 @@ void Scanner::getNumber()
 	while ((m_peekChar = this->peekChar()) != EOF) {
 		if (isdigit(m_peekChar)) {
 			number += m_peekChar;
+		}
+		else {
+			break;
 		}
 	}
 

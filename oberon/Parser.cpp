@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdio>
 #include <string>
 #include "Parser.h"
 
@@ -20,10 +21,29 @@ Parser::~Parser(void)
 	}
 }
 
-SymbolObject *Parser::parse(string filePath)
+ASTNode *Parser::parse(FILE *fp)
 {
-	assert(m_scanner != NULL);
-	return NULL;
+	m_scanner = new Scanner(fp);
+	if (!m_scanner->init()) {
+		return NULL;
+	}
+
+	this->getNextSymbol();
+
+	ASTNode *module = NULL;
+	if (!this->module(&module)) {
+		m_scanner->mark("unknown");
+		if (module != NULL) {
+			delete module;
+		}
+		return NULL;
+	}
+	if (module == NULL) {
+		assert(false);
+		return NULL;
+	}
+
+	return module;
 }
 
 SymbolKind::T_SymbolKind Parser::getCurrentSymbol()
@@ -84,11 +104,11 @@ bool Parser::selector(ASTNode **result)
 				return false;
 			}
 
-			ASTNode **exp = NULL;
-			if (!this->expression(exp)) {
+			ASTNode *exp = NULL;
+			if (!this->expression(&exp)) {
 				return false;
 			}
-			assert(*exp != NULL);
+			assert(exp != NULL);
 
 			sym_kind = this->getCurrentSymbol();
 			if (sym_kind != SymbolKind::RBRAK) {
@@ -98,7 +118,7 @@ bool Parser::selector(ASTNode **result)
 
 			*current_node = new ASTNode(ASTNodeKind::SELECTOR);
 			(*current_node)->addChild(new ASTNode(new SymbolObject(SymbolKind::LBRAK)));
-			(*current_node)->addChild(*exp);
+			(*current_node)->addChild(exp);
 			(*current_node)->addChild(new ASTNode(new SymbolObject(SymbolKind::RBRAK)));
 
 			if (*last_node != NULL) {
@@ -162,7 +182,7 @@ bool Parser::factor(ASTNode **result)
 
 		return true;
 	}
-	else if (sym_kind == SymbolKind::LBRAK) {
+	else if (sym_kind == SymbolKind::LPREN) {
 		sym_kind = this->getNextSymbol();
 		if ((sym_kind == SymbolKind::ERROR) || (sym_kind == SymbolKind::END_OF_FILE)) {
 			// TODO. error handling
@@ -176,7 +196,7 @@ bool Parser::factor(ASTNode **result)
 		assert(ast_exp != NULL);
 
 		sym_kind = this->getCurrentSymbol();
-		if (sym_kind != SymbolKind::RBRAK) {
+		if (sym_kind != SymbolKind::RPAREN) {
 			// TODO. error handling
 			return false;
 		}
@@ -209,12 +229,14 @@ bool Parser::factor(ASTNode **result)
 	else {
 		return false;
 	}
-
-	return false;
 }
 bool Parser::term(ASTNode **result)
 {
 	assert(m_scanner != NULL);
+	SymbolKind::T_SymbolKind sym_kind = this->getCurrentSymbol();
+	if (sym_kind == SymbolKind::ERROR) {
+		return false;
+	}
 
 	*result = new ASTNode(ASTNodeKind::TERM);
 	
@@ -226,12 +248,13 @@ bool Parser::term(ASTNode **result)
 
 	(*result)->addChild(ast_factor);
 
-	SymbolKind::T_SymbolKind sym_kind = this->getCurrentSymbol();
+	sym_kind = this->getCurrentSymbol();
 	if (sym_kind == SymbolKind::ERROR) {
 		return false;
 	}
-	else if ((sym_kind == SymbolKind::TIMES) || (sym_kind == SymbolKind::TIMES) || 
-		(sym_kind == SymbolKind::TIMES) || (sym_kind == SymbolKind::TIMES)) {
+
+	while ((sym_kind == SymbolKind::TIMES) || (sym_kind == SymbolKind::DIV) || 
+		(sym_kind == SymbolKind::MOD) || (sym_kind == SymbolKind::AND)) {
 			sym_kind = this->getNextSymbol();
 			if ((sym_kind == SymbolKind::ERROR) || (sym_kind == SymbolKind::END_OF_FILE)) {
 				// TODO. error handling
@@ -246,11 +269,10 @@ bool Parser::term(ASTNode **result)
 			(*result)->addChild(new ASTNode(new SymbolObject(sym_kind)));
 			(*result)->addChild(ast_factor);
 
-			return true;
+			sym_kind = this->getCurrentSymbol();
 	}
-	else {
-		return true;
-	}
+
+	return true;
 }
 bool Parser::simpleExpression(ASTNode **result)
 {
@@ -279,7 +301,8 @@ bool Parser::simpleExpression(ASTNode **result)
 	assert(ast_term != NULL);
 	(*result)->addChild(ast_term);
 
-	if ((sym_kind == SymbolKind::PLUS) || (sym_kind == SymbolKind::MINUS) || (sym_kind == SymbolKind::OR)) {
+	sym_kind = this->getCurrentSymbol();
+	while ((sym_kind == SymbolKind::PLUS) || (sym_kind == SymbolKind::MINUS) || (sym_kind == SymbolKind::OR)) {
 		(*result)->addChild(new ASTNode(new SymbolObject(sym_kind)));
 
 		sym_kind = this->getNextSymbol();
@@ -290,11 +313,10 @@ bool Parser::simpleExpression(ASTNode **result)
 		assert(ast_term != NULL);
 		(*result)->addChild(ast_term);
 
-		return true;
+		sym_kind = this->getCurrentSymbol();
 	}
-	else {
-		return true;
-	}
+
+	return true;
 }
 bool Parser::expression(ASTNode **result)
 {
@@ -314,6 +336,7 @@ bool Parser::expression(ASTNode **result)
 
 	(*result)->addChild(ast_simple_exp);
 
+	sym_kind = this->getCurrentSymbol();
 	if (sym_kind == SymbolKind::ERROR) {
 		return false;
 	}
@@ -432,6 +455,7 @@ bool Parser::actualParameters(ASTNode **result)
 		}
 	}
 
+	sym_kind = this->getCurrentSymbol();
 	if (sym_kind != SymbolKind::RPAREN) {
 		// TODO. error handling
 		return false;
@@ -475,9 +499,14 @@ bool Parser::procedureCall(ASTNode **result)
 		if (!this->actualParameters(&ast_params)) {
 			return false;
 		}
-		assert(ast_params != NULL);
+		if (ast_params == NULL) {
+			assert(false);
+			return false;
+		}
 
 		(*result)->addChild(ast_params);
+
+		return true;
 	}
 	else {
 		return true;
@@ -559,22 +588,6 @@ bool Parser::ifStatement(ASTNode **result)
 	
 	if (sym_kind == SymbolKind::ELSE) {
 		(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::ELSE)));
-
-		sym_kind = this->getNextSymbol();
-		if (!this->expression(&ast_exp)) {
-			return false;
-		}
-		if (ast_exp == NULL) {
-			assert(false);
-			return false;
-		}
-		(*result)->addChild(ast_exp);
-
-		sym_kind = this->getCurrentSymbol();
-		if (sym_kind != SymbolKind::THEN) {
-			return false;
-		}
-		(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::THEN)));
 
 		this->getNextSymbol();
 		if (!this->statementSequence(&ast_stmt_seq)) {
@@ -850,6 +863,8 @@ bool Parser::arrayType(ASTNode **result)
 	*result = new ASTNode(ASTNodeKind::ARRAY_TYPE);
 	(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::ARRAY)));
 
+	this->getNextSymbol();
+
 	ASTNode *ast_exp = NULL;
 	if (!this->expression(&ast_exp)) {
 		if (ast_exp != NULL) {
@@ -863,6 +878,7 @@ bool Parser::arrayType(ASTNode **result)
 	}
 	(*result)->addChild(ast_exp);
 
+	sym_kind = this->getCurrentSymbol();
 	if (sym_kind != SymbolKind::OF) {
 		return false;
 	}
@@ -1133,6 +1149,29 @@ bool Parser::formalParameters(ASTNode **result)
 		(*result)->addChild(ast_fp_section);
 	}
 
+	sym_kind = this->getCurrentSymbol();
+	while (sym_kind == SymbolKind::SEMICOLON) {
+		(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
+
+		this->getNextSymbol();
+
+		ASTNode *ast_fp_section = NULL;
+		if (!this->fpSection(&ast_fp_section)) {
+			if (ast_fp_section != NULL) {
+				delete ast_fp_section;
+			}
+			return false;
+		}
+		if (ast_fp_section == NULL) {
+			assert(false);
+			return false;
+		}
+
+		(*result)->addChild(ast_fp_section);
+
+		sym_kind = this->getCurrentSymbol();
+	}
+
 	if (sym_kind != SymbolKind::RPAREN) {
 		return false;
 	}
@@ -1173,7 +1212,6 @@ bool Parser::procedureHeading(ASTNode **result)
 			assert(false);
 			return false;
 		}
-
 		(*result)->addChild(ast_params);
 
 		return true;
@@ -1189,7 +1227,6 @@ bool Parser::procedureBody(ASTNode **result)
 	if (sym_kind == SymbolKind::ERROR) {
 		return false;
 	}
-
 	*result = new ASTNode(ASTNodeKind::PROCEDURE_BODY);
 
 	ASTNode *ast_declarations = NULL;
@@ -1237,7 +1274,7 @@ bool Parser::procedureBody(ASTNode **result)
 
 	this->getNextSymbol();
 
-	return false;
+	return true;
 }
 bool Parser::procedureDeclaration(ASTNode **result)
 {
@@ -1246,7 +1283,6 @@ bool Parser::procedureDeclaration(ASTNode **result)
 	if (sym_kind != SymbolKind::PROCEDURE) {
 		return false;
 	}
-
 	*result = new ASTNode(ASTNodeKind::PROCEDURE_DECLARATION);
 
 	ASTNode *ast_proc_head = NULL;
@@ -1260,7 +1296,6 @@ bool Parser::procedureDeclaration(ASTNode **result)
 		assert(false);
 		return false;
 	}
-
 	(*result)->addChild(ast_proc_head);
 
 	sym_kind = this->getCurrentSymbol();
@@ -1282,7 +1317,6 @@ bool Parser::procedureDeclaration(ASTNode **result)
 		assert(false);
 		return false;
 	}
-
 	(*result)->addChild(ast_proc_body);
 
 	return true;
@@ -1324,14 +1358,12 @@ bool Parser::declarations(ASTNode **result)
 						assert(false);
 						return false;
 					}
-
 					(*result)->addChild(ast_exp);
 
 					sym_kind = this->getCurrentSymbol();
 					if (sym_kind != SymbolKind::SEMICOLON) {
 						return false;
 					}  
-
 					(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
 
 					this->getNextSymbol();
@@ -1362,14 +1394,12 @@ bool Parser::declarations(ASTNode **result)
 						assert(false);
 						return false;
 					}
-
 					(*result)->addChild(ast_type);
 
 					sym_kind = this->getCurrentSymbol();
 					if (sym_kind != SymbolKind::SEMICOLON) {
 						return false;
 					}
-
 					(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
 
 					this->getNextSymbol();
@@ -1392,14 +1422,12 @@ bool Parser::declarations(ASTNode **result)
 						assert(false);
 						return false;
 					}
-
 					(*result)->addChild(ast_ident_list);
 
 					sym_kind = this->getCurrentSymbol();
 					if (sym_kind != SymbolKind::COLON) {
 						return false;
 					}
-
 					(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::COLON)));
 
 					this->getNextSymbol();
@@ -1415,14 +1443,12 @@ bool Parser::declarations(ASTNode **result)
 						assert(false);
 						return false;
 					}
-
 					(*result)->addChild(ast_type);
 
 					sym_kind = this->getCurrentSymbol();
 					if (sym_kind != SymbolKind::SEMICOLON) {
 						return false;
 					}
-
 					(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
 
 					sym_kind = this->getNextSymbol();
@@ -1441,17 +1467,15 @@ bool Parser::declarations(ASTNode **result)
 					assert(false);
 					return false;
 				}
-
 				(*result)->addChild(ast_proc_decl);
 
 				sym_kind = this->getCurrentSymbol();
 				if (sym_kind != SymbolKind::SEMICOLON) {
 					return false;
 				}
-
 				(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
 
-				this->getNextSymbol();
+				sym_kind = this->getNextSymbol();
 			}
 
 			return true;
@@ -1482,8 +1506,8 @@ bool Parser::module(ASTNode **result)
 	if (sym_kind != SymbolKind::SEMICOLON) {
 		return false;
 	}
-
 	(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::SEMICOLON)));
+
 
 	sym_kind = this->getNextSymbol();
 	ASTNode *ast_decls = NULL;
@@ -1517,20 +1541,23 @@ bool Parser::module(ASTNode **result)
 		}
 	}
 
-	sym_kind == this->getCurrentSymbol();
+	sym_kind = this->getCurrentSymbol();
 	if (sym_kind != SymbolKind::END) {
 		return false;
 	}
+	(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::END)));
 
 	sym_kind = this->getNextSymbol();
 	if (sym_kind != SymbolKind::IDENT) {
 		return false;
 	}
+	(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::IDENT)));
 
 	sym_kind = this->getNextSymbol();
 	if (sym_kind != SymbolKind::PERIOD) {
 		return false;
 	}
+	(*result)->addChild(new ASTNode(new SymbolObject(SymbolKind::PERIOD)));
 
 	return true;
 }

@@ -1,12 +1,11 @@
-#ifndef Parser_H
-#define Parser_H
+#ifndef PARSER_H
+#define PARSER_H
 
+#include <cstdio>
 #include <hash_set>
 #include <hash_map>
 #include "ASTNode.h"
 #include "Scanner.h"
-
-using namespace std;
 
 class Parser
 {
@@ -15,7 +14,7 @@ public:
 	virtual ~Parser(void);
 
 	// return NULL when failed
-	SymbolObject *parse(string filePath);
+	ASTNode *parse(FILE *fp);
 
 private:
 	SymbolKind::T_SymbolKind getCurrentSymbol();
@@ -55,8 +54,8 @@ private:
 
 private:
 	Scanner *m_scanner;
-	hash_map<SymbolObject*, string> m_identValuesDict;
-	hash_map<SymbolObject*, int> m_numberValuesDict;
+	std::hash_map<SymbolObject*, std::string> m_identValuesDict;
+	std::hash_map<SymbolObject*, int> m_numberValuesDict;
 };
 
 #endif

@@ -6,8 +6,6 @@
 #include "ASTNodeKind.h"
 #include "SymbolObject.h"
 
-using namespace std;
-
 class ASTNode {
 public:
 	ASTNode(ASTNodeKind::T_ASTNodeKind astNodeKind)
@@ -45,7 +43,7 @@ public:
 		return m_symbolObject;
 	}
 
-	const list<ASTNode*> *getChildren() const
+	const std::list<ASTNode*> *getChildren() const
 	{
 		return &m_children;
 	}
@@ -59,7 +57,7 @@ private:
 	ASTNodeKind::T_ASTNodeKind m_astNodeKind;
 	// not NULL when @m_astNodeKind stands for a terminal symbol
 	SymbolObject *m_symbolObject;
-	list<ASTNode*> m_children;
+	std::list<ASTNode*> m_children;
 };
 
 #endif
