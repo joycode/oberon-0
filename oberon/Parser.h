@@ -2,8 +2,7 @@
 #define PARSER_H
 
 #include <cstdio>
-#include <hash_set>
-#include <hash_map>
+#include <map>
 #include "ASTNode.h"
 #include "Scanner.h"
 
@@ -54,8 +53,8 @@ private:
 
 private:
 	Scanner *m_scanner;
-	std::hash_map<SymbolObject*, std::string> m_identValuesDict;
-	std::hash_map<SymbolObject*, int> m_numberValuesDict;
+	std::map<SymbolObject*, std::string> m_identValuesDict;
+	std::map<SymbolObject*, int> m_numberValuesDict;
 };
 
 #endif

@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <hash_map>
 #include "Scanner.h"
 #include "Parser.h"
 #include "ASTNode.h"

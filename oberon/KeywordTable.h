@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
 #include "SymbolKind.h"
 #include "Util.h"
 
@@ -24,6 +25,7 @@ private:
 
 	// simple but ineffcient
 	static const CP_KeywordInfo m_keywords[];
+	static const std::vector<CP_KeywordInfo> m_keywords2;
 
 public:
 	// test if @word is a keyword?
@@ -39,8 +41,6 @@ public:
 				return true;
 			}
 		}
-		
-		return false;
 	}
 };
 

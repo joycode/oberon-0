@@ -41,7 +41,7 @@ public:
 
 	// test if @ident is a field of this ident
 	// return NULL when not
-	const ASTIdentInfo *findField(string ident) const
+	const ASTIdentInfo *findField(std::string ident) const
 	{
 		//list<const ASTIdentInfo* const>::const_iterator it = m_fields.begin();
 		//while (it != m_fields.end()) {

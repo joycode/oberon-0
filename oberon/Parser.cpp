@@ -5,8 +5,6 @@
 
 using namespace std;
 
-// TODO. ignoring memory leaks
-
 Parser::Parser(void)
 	: m_identValuesDict(), m_numberValuesDict()
 {

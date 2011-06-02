@@ -60,6 +60,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DLXEmulator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Scanner.cpp" />
@@ -68,6 +69,7 @@
     <ClInclude Include="ASTNodeKind.h" />
     <ClInclude Include="ASTIdentInfo.h" />
     <ClInclude Include="ASTIdentType.h" />
+    <ClInclude Include="DLXEmulator.h" />
     <ClInclude Include="KeywordTable.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Scanner.h" />

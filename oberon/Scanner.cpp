@@ -10,7 +10,7 @@ Scanner::Scanner(FILE *fp)
 	: m_sourceLocation()
 {
 	m_fp = fp;
-	m_currentSymbolKind == SymbolKind::ERROR;
+	m_currentSymbolKind = SymbolKind::ERROR;
 	m_peekChar = '\0';
 	m_number = 0;
 	m_ident = "";
